@@ -3,10 +3,7 @@ package system
 import (
 	"bytes"
 	"io/ioutil"
-	"os"
 	"strconv"
-
-	"path"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/inputs"
@@ -82,19 +79,10 @@ func (sfs *SysctlFS) Gather(acc telegraf.Accumulator) error {
 	return nil
 }
 
-func GetHostProc() string {
-	procPath := "/proc"
-	if os.Getenv("HOST_PROC") != "" {
-		procPath = os.Getenv("HOST_PROC")
-	}
-	return procPath
-}
-
 func init() {
-
 	inputs.Add("linux_sysctl_fs", func() telegraf.Input {
 		return &SysctlFS{
-			path: path.Join(GetHostProc(), "/sys/fs"),
+			path: "/proc/sys/fs",
 		}
 	})
 }

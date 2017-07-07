@@ -11,7 +11,7 @@ import (
 
 	"github.com/influxdata/telegraf"
 
-	"gopkg.in/gorethink/gorethink.v3"
+	"gopkg.in/dancannon/gorethink.v1"
 )
 
 type Server struct {
