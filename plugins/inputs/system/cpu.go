@@ -16,14 +16,12 @@ type CPUStats struct {
 	PerCPU         bool `toml:"percpu"`
 	TotalCPU       bool `toml:"totalcpu"`
 	CollectCPUTime bool `toml:"collect_cpu_time"`
-	ReportActive   bool `toml:"report_active"`
 }
 
 func NewCPUStats(ps PS) *CPUStats {
 	return &CPUStats{
 		ps:             ps,
 		CollectCPUTime: true,
-		ReportActive:   true,
 	}
 }
 
@@ -38,8 +36,6 @@ var sampleConfig = `
   totalcpu = true
   ## If true, collect raw CPU time metrics.
   collect_cpu_time = false
-  ## If true, compute and report the sum of all non-idle CPU states.
-  report_active = false
 `
 
 func (_ *CPUStats) SampleConfig() string {
@@ -59,7 +55,6 @@ func (s *CPUStats) Gather(acc telegraf.Accumulator) error {
 		}
 
 		total := totalCpuTime(cts)
-		active := activeCpuTime(cts)
 
 		if s.CollectCPUTime {
 			// Add cpu time metrics
@@ -75,9 +70,6 @@ func (s *CPUStats) Gather(acc telegraf.Accumulator) error {
 				"time_guest":      cts.Guest,
 				"time_guest_nice": cts.GuestNice,
 			}
-			if s.ReportActive {
-				fieldsC["time_active"] = activeCpuTime(cts)
-			}
 			acc.AddCounter("cpu", fieldsC, tags, now)
 		}
 
@@ -88,7 +80,6 @@ func (s *CPUStats) Gather(acc telegraf.Accumulator) error {
 		}
 		lastCts := s.lastStats[i]
 		lastTotal := totalCpuTime(lastCts)
-		lastActive := activeCpuTime(lastCts)
 		totalDelta := total - lastTotal
 
 		if totalDelta < 0 {
@@ -99,7 +90,6 @@ func (s *CPUStats) Gather(acc telegraf.Accumulator) error {
 		if totalDelta == 0 {
 			continue
 		}
-
 		fieldsG := map[string]interface{}{
 			"usage_user":       100 * (cts.User - lastCts.User - (cts.Guest - lastCts.Guest)) / totalDelta,
 			"usage_system":     100 * (cts.System - lastCts.System) / totalDelta,
@@ -111,9 +101,6 @@ func (s *CPUStats) Gather(acc telegraf.Accumulator) error {
 			"usage_steal":      100 * (cts.Steal - lastCts.Steal) / totalDelta,
 			"usage_guest":      100 * (cts.Guest - lastCts.Guest) / totalDelta,
 			"usage_guest_nice": 100 * (cts.GuestNice - lastCts.GuestNice) / totalDelta,
-		}
-		if s.ReportActive {
-			fieldsG["usage_active"] = 100 * (active - lastActive) / totalDelta
 		}
 		acc.AddGauge("cpu", fieldsG, tags, now)
 	}
@@ -127,11 +114,6 @@ func totalCpuTime(t cpu.TimesStat) float64 {
 	total := t.User + t.System + t.Nice + t.Iowait + t.Irq + t.Softirq + t.Steal +
 		t.Idle
 	return total
-}
-
-func activeCpuTime(t cpu.TimesStat) float64 {
-	active := totalCpuTime(t) - t.Idle
-	return active
 }
 
 func init() {

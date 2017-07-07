@@ -57,12 +57,10 @@ var fService = flag.String("service", "",
 
 // Telegraf version, populated linker.
 //   ie, -ldflags "-X main.version=`git describe --always --tags`"
-
 var (
-	nextVersion = "1.4.0"
-	version     string
-	commit      string
-	branch      string
+	version string
+	commit  string
+	branch  string
 )
 
 func init() {
@@ -198,7 +196,7 @@ func reloadLoop(
 			}
 		}()
 
-		log.Printf("I! Starting Telegraf %s\n", displayVersion())
+		log.Printf("I! Starting Telegraf (version %s)\n", version)
 		log.Printf("I! Loaded outputs: %s", strings.Join(c.OutputNames(), " "))
 		log.Printf("I! Loaded inputs: %s", strings.Join(c.InputNames(), " "))
 		log.Printf("I! Tags enabled: %s", c.ListTags())
@@ -256,13 +254,6 @@ func (p *program) Stop(s service.Service) error {
 	return nil
 }
 
-func displayVersion() string {
-	if version == "" {
-		return fmt.Sprintf("v%s~pre%s", nextVersion, commit)
-	}
-	return "v" + version
-}
-
 func main() {
 	flag.Usage = func() { usageExit(0) }
 	flag.Parse()
@@ -304,7 +295,7 @@ func main() {
 	if len(args) > 0 {
 		switch args[0] {
 		case "version":
-			fmt.Printf("Telegraf %s (git: %s %s)\n", displayVersion(), branch, commit)
+			fmt.Printf("Telegraf v%s (git: %s %s)\n", version, branch, commit)
 			return
 		case "config":
 			config.PrintSampleConfig(
@@ -332,7 +323,7 @@ func main() {
 		}
 		return
 	case *fVersion:
-		fmt.Printf("Telegraf %s (git: %s %s)\n", displayVersion(), branch, commit)
+		fmt.Printf("Telegraf v%s (git: %s %s)\n", version, branch, commit)
 		return
 	case *fSampleConfig:
 		config.PrintSampleConfig(

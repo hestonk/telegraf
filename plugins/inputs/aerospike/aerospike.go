@@ -73,9 +73,10 @@ func (a *Aerospike) gatherServer(hostport string, acc telegraf.Accumulator) erro
 	for _, n := range nodes {
 		tags := map[string]string{
 			"aerospike_host": hostport,
-			"node_name":      n.GetName(),
 		}
-		fields := make(map[string]interface{})
+		fields := map[string]interface{}{
+			"node_name": n.GetName(),
+		}
 		stats, err := as.RequestNodeStats(n)
 		if err != nil {
 			return err
@@ -85,7 +86,7 @@ func (a *Aerospike) gatherServer(hostport string, acc telegraf.Accumulator) erro
 			if err == nil {
 				fields[strings.Replace(k, "-", "_", -1)] = val
 			} else {
-				log.Printf("I! skipping aerospike field %v with int64 overflow: %q", k, v)
+				log.Printf("I! skipping aerospike field %v with int64 overflow", k)
 			}
 		}
 		acc.AddFields("aerospike_node", fields, tags, time.Now())
@@ -99,10 +100,11 @@ func (a *Aerospike) gatherServer(hostport string, acc telegraf.Accumulator) erro
 		for _, namespace := range namespaces {
 			nTags := map[string]string{
 				"aerospike_host": hostport,
-				"node_name":      n.GetName(),
 			}
 			nTags["namespace"] = namespace
-			nFields := make(map[string]interface{})
+			nFields := map[string]interface{}{
+				"node_name": n.GetName(),
+			}
 			info, err := as.RequestNodeInfo(n, "namespace/"+namespace)
 			if err != nil {
 				continue
@@ -117,7 +119,7 @@ func (a *Aerospike) gatherServer(hostport string, acc telegraf.Accumulator) erro
 				if err == nil {
 					nFields[strings.Replace(parts[0], "-", "_", -1)] = val
 				} else {
-					log.Printf("I! skipping aerospike field %v with int64 overflow: %q", parts[0], parts[1])
+					log.Printf("I! skipping aerospike field %v with int64 overflow", parts[0])
 				}
 			}
 			acc.AddFields("aerospike_namespace", nFields, nTags, time.Now())

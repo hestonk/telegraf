@@ -2,7 +2,6 @@ package tail
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/influxdata/tail"
@@ -124,10 +123,7 @@ func (t *Tail) receiver(tailer *tail.Tail) {
 				tailer.Filename, err))
 			continue
 		}
-		// Fix up files with Windows line endings.
-		text := strings.TrimRight(line.Text, "\r")
-
-		m, err = t.parser.ParseLine(text)
+		m, err = t.parser.ParseLine(line.Text)
 		if err == nil {
 			t.acc.AddFields(m.Name(), m.Fields(), m.Tags(), m.Time())
 		} else {
